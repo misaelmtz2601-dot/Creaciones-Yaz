@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Creaciones Yazmin</title>
+  <meta name="description" content="Moños personalizados y productos de temporada de Creaciones Yazmin">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">CREACIONES <span>YAZMIN</span></div>
+  <nav>
+    <a href="#inicio">Inicio</a><a href="#categorias">Categorías</a>
+    <a href="#productos">Productos</a><a href="#personaliza">Crea tu moño</a>
+  </nav>
+  <div class="actions">
+    <button aria-label="Favoritos">♡</button><button aria-label="Carrito">🛒 <b id="cartCount">0</b></button>
+  </div>
+</header>
+
+<main>
+<section id="inicio" class="hero">
+  <div>
+    <p class="eyebrow">DETALLES HECHOS CON AMOR</p>
+    <h1>Moños personalizados<br>para cada ocasión</h1>
+    <p>Diseños especiales, productos de temporada y detalles que hacen sonreír.</p>
+    <a class="btn" href="#productos">Ver productos</a>
+  </div>
+  <div class="hero-bows" aria-hidden="true"><span>🎀</span><span>🎀</span><span>🎀</span></div>
+</section>
+
+<section id="categorias" class="section">
+  <div class="section-title"><h2>Categorías</h2><p>Encuentra tu estilo</p></div>
+  <div class="categories">
+    <button class="category" data-filter="Moños">🎀<strong>Moños</strong></button>
+    <button class="category" data-filter="Escolares">🎒<strong>Escolares</strong></button>
+    <button class="category" data-filter="Diademas">👑<strong>Diademas</strong></button>
+    <button class="category" data-filter="Temporada">✨<strong>Temporada</strong></button>
+  </div>
+</section>
+
+<section id="productos" class="section">
+  <div class="section-title"><h2>Productos</h2><p>Algunos de nuestros diseños</p></div>
+  <div class="filters">
+    <button class="filter active" data-filter="Todos">Todos</button>
+    <button class="filter" data-filter="Moños">Moños</button>
+    <button class="filter" data-filter="Escolares">Escolares</button>
+    <button class="filter" data-filter="Diademas">Diademas</button>
+    <button class="filter" data-filter="Temporada">Temporada</button>
+  </div>
+  <div id="productGrid" class="grid"></div>
+</section>
+
+<section id="personaliza" class="personaliza">
+  <div>
+    <p class="eyebrow">TU IDEA, TU ESTILO</p>
+    <h2>Crea tu moño</h2>
+    <p>Personaliza tu diseño con nombre, estilo y colores. Esta sección quedará lista para conectar con el configurador real.</p>
+    <button class="btn" id="startCustom">Personalizar</button>
+  </div>
+  <div class="custom-preview">🎀</div>
+</section>
+</main>
+
+<footer>
+  <strong>CREACIONES YAZMIN</strong>
+  <p>Moños personalizados · Productos de temporada</p>
+  <small>© 2026 Creaciones Yazmin</small>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
