@@ -1,14 +1,3 @@
-# Creaciones Yazmin — diseño definitivo
+# Creaciones Yazmin — diseño definitivo aprobado
 
-Esta versión implementa la estructura visual definitiva aprobada:
-- Logo original de Creaciones Yazmin.
-- Encabezado "MOÑOS HECHOS CON AMOR".
-- Botones rosa/lila.
-- Buscador.
-- Carrusel de 4 imágenes.
-- Recientes.
-- Tarjetas de productos.
-- Crea tu moño.
-- Barra inferior para celular.
-
-Los productos, imágenes del carrusel, cuentas, pedidos, pagos, envíos y Firebase se integrarán después sin cambiar el diseño aprobado.
+Esta versión aplica el diseño rosa/lila aprobado: encabezado con logo original, botones 3D, buscador, carrusel de 4 espacios, Recientes, carrito y Crea tu moño. Las cuatro imágenes reales del carrusel se colocarán cuando sean subidas.
