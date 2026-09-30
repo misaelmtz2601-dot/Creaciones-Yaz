@@ -3,81 +3,77 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f58fc0">
 <title>Creaciones Yazmin — Moños hechos con amor</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="hero-brand">
-    <div class="flowers left">✿</div>
-    <div class="logo-box"><img src="logo-creaciones-yazmin.png" alt="Creaciones Yazmin"></div>
-    <div class="hero-copy">
-      <div class="big-title">MOÑOS</div>
-      <div class="love-title">HECHOS CON AMOR <span>♡</span></div>
+<main class="app">
+  <header class="brand">
+    <img src="assets/logo-creaciones-yazmin.png" class="logo" alt="Creaciones Yazmin">
+    <div class="headline">
+      <div class="title">MOÑOS</div>
+      <div class="subtitle">HECHOS CON AMOR <span>♡</span></div>
     </div>
-    <div class="flowers right">✿</div>
-  </div>
+    <div class="floral floral-a">✿</div><div class="floral floral-b">✿</div>
+  </header>
 
-  <nav class="main-buttons">
-    <a class="btn purple" href="#cuenta"><span>♟</span>Iniciar sesión</a>
-    <a class="btn pink" href="#cuenta"><span>♟+</span>Registrarse</a>
-    <a class="btn purple" href="#recientes"><span>🎀</span>Moños</a>
-    <a class="btn pink" href="#diademas"><span>♧</span>Diademas</a>
-    <a class="btn purple" href="#liston"><span>▱</span>Listón</a>
-    <a class="btn pink" href="#contacto"><span>💬</span>Contacto</a>
-    <a class="btn purple" href="#pedidos"><span>▤</span>Pedidos</a>
-    <button class="btn pink" id="cartBtn"><span>🛒</span>Carrito <b id="cartTop">0</b></button>
+  <nav class="quick-grid" aria-label="Navegación principal">
+    <button class="quick purple" data-action="login"><span class="ico">♟</span><span>Iniciar<br>sesión</span></button>
+    <button class="quick pink" data-action="register"><span class="ico">♟+</span><span>Registrarse</span></button>
+    <button class="quick purple" data-category="Moños"><span class="ico">🎀</span><span>Moños</span></button>
+    <button class="quick pink" data-category="Diademas"><span class="ico">♕</span><span>Diademas</span></button>
+    <button class="quick purple" data-category="Listón"><span class="ico">▣</span><span>Listón</span></button>
+    <button class="quick pink" data-action="contact"><span class="ico">💬</span><span>Contacto</span></button>
+    <button class="quick purple" data-action="orders"><span class="ico">☷</span><span>Pedidos</span></button>
+    <button class="quick pink cart-btn" data-action="cart"><span class="ico">🛒</span><span>Carrito <b id="cartCount">0</b></span></button>
   </nav>
 
-  <form class="search" id="searchForm">
-    <span class="search-icon">⌕</span>
-    <input id="search" type="search" placeholder="Buscar productos...">
-    <button>Buscar</button>
-  </form>
-</header>
-
-<main>
-  <section class="carousel">
-    <div class="slide active">
-      <div class="slide-art art-one">🎀</div>
-      <div class="slide-text"><strong>Nuevos</strong><em>Diseños</em><small>para cada ocasión ♥</small></div>
-    </div>
-    <div class="slide">
-      <div class="slide-art art-two">🎀💜🎀</div>
-      <div class="slide-text"><strong>Moños</strong><em>personalizados</em><small>hechos con amor ♥</small></div>
-    </div>
-    <div class="slide">
-      <div class="slide-art art-three">🌸🎀🌸</div>
-      <div class="slide-text"><strong>Productos</strong><em>de temporada</em><small>para cada ocasión ♥</small></div>
-    </div>
-    <div class="slide">
-      <div class="slide-art art-four">✨🎀✨</div>
-      <div class="slide-text"><strong>Creaciones</strong><em>especiales</em><small>hechas para ti ♥</small></div>
-    </div>
-    <button class="arrow prev" id="prev">‹</button>
-    <button class="arrow next" id="next">›</button>
-    <div class="dots" id="dots"></div>
+  <section class="searchbox">
+    <div class="searchfield"><span>⌕</span><input id="search" placeholder="Buscar productos..." autocomplete="off"></div>
+    <button id="searchBtn">Buscar</button>
   </section>
 
-  <section id="recientes" class="recent">
-    <div class="section-head"><h2>🎀 Recientes</h2><a href="#">Ver todos ›</a></div>
-    <div class="products">
-      <article class="card"><div class="photo blue">🎀</div><h3>Moño Stitch</h3><p>Medida 10 cm</p><strong>$65 MXN</strong><button class="add">🛒</button></article>
-      <article class="card"><div class="photo lilac">🎀</div><h3>Moño Princesa</h3><p>Medida 9 cm</p><strong>$60 MXN</strong><button class="add">🛒</button></article>
-      <article class="card"><div class="photo red">🎀</div><h3>Moño Hello Kitty</h3><p>Medida 9 cm</p><strong>$60 MXN</strong><button class="add">🛒</button></article>
-      <article class="card"><div class="photo yellow">🎀</div><h3>Moño Girasol</h3><p>Medida 10 cm</p><strong>$65 MXN</strong><button class="add">🛒</button></article>
+  <section class="hero-card">
+    <div class="slides" id="slides">
+      <img src="assets/hero-1.jpg" alt="Nuevos diseños de moños" class="slide active">
+      <img src="assets/hero-1.jpg" alt="Moños para cada ocasión" class="slide">
+      <img src="assets/hero-1.jpg" alt="Diseños personalizados" class="slide">
+      <img src="assets/hero-1.jpg" alt="Creaciones Yazmin" class="slide">
+    </div>
+    <button class="arrow left" id="prev" aria-label="Anterior">‹</button>
+    <button class="arrow right" id="next" aria-label="Siguiente">›</button>
+    <div class="dots" id="dots"><button class="on"></button><button></button><button></button><button></button></div>
+  </section>
+
+  <section class="recent">
+    <div class="section-head">
+      <h2><span>🎀</span> Recientes</h2>
+      <button id="allBtn">Ver todos ›</button>
+    </div>
+    <div class="products" id="products"></div>
+  </section>
+
+  <section class="create">
+    <img src="assets/create-banner.jpg" alt="Crea tu moño">
+    <div class="create-overlay">
+      <h2>Crea tu moño</h2>
+      <p>Personaliza tu estilo ♥</p>
+      <button id="createBtn">Comenzar ›</button>
     </div>
   </section>
 
-  <section class="custom">
-    <div class="custom-bow">🎀</div>
-    <div><h2>Crea tu moño</h2><p>Personaliza tu estilo <b>♥</b></p><button>Comenzar ›</button></div>
-    <div class="girl">👧🏻</div>
-  </section>
+  <footer>Creaciones Yazmin · Todos los derechos © reservados</footer>
 </main>
 
-<footer id="contacto">CREACIONES YAZMIN · Moños hechos con amor</footer>
-<div class="mobile-nav"><a class="active">⌂<small>Inicio</small></a><a>♥<small>Favoritos</small></a><button id="cartMobile">🛒<b id="cartBottom">0</b><small>Carrito</small></button><a>●<small>Mi cuenta</small></a><a>☰<small>Menú</small></a></div>
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <button class="close" id="close">×</button>
+    <h3 id="modalTitle">Creaciones Yazmin</h3>
+    <p id="modalText"></p>
+    <button class="modal-primary" id="modalOk">Aceptar</button>
+  </div>
+</div>
 <script src="script.js"></script>
 </body>
 </html>
