@@ -1,11 +1,14 @@
-# Creaciones Yazmin
+# Creaciones Yazmin — diseño definitivo
 
-Primera base de la tienda web.
+Esta versión implementa la estructura visual definitiva aprobada:
+- Logo original de Creaciones Yazmin.
+- Encabezado "MOÑOS HECHOS CON AMOR".
+- Botones rosa/lila.
+- Buscador.
+- Carrusel de 4 imágenes.
+- Recientes.
+- Tarjetas de productos.
+- Crea tu moño.
+- Barra inferior para celular.
 
-## Archivos
-- index.html
-- style.css
-- script.js
-
-## Próximas integraciones
-Firebase, catálogo real, cuentas, pedidos, pagos, cálculo de envío, WhatsApp y PWA.
+Los productos, imágenes del carrusel, cuentas, pedidos, pagos, envíos y Firebase se integrarán después sin cambiar el diseño aprobado.

@@ -1,29 +1,30 @@
 const products=[
- {name:"Moño clásico",cat:"Moños",price:89,emoji:"🎀"},
- {name:"Moño escolar",cat:"Escolares",price:75,emoji:"🎀"},
- {name:"Diadema floral",cat:"Diademas",price:129,emoji:"👑"},
- {name:"Moño de temporada",cat:"Temporada",price:99,emoji:"✨"},
- {name:"Moño personalizado",cat:"Moños",price:119,emoji:"🎀"},
- {name:"Diadema Catrina",cat:"Diademas",price:149,emoji:"👑"},
- {name:"Moño escolar premium",cat:"Escolares",price:99,emoji:"🎒"},
- {name:"Especial de temporada",cat:"Temporada",price:139,emoji:"✨"}
+ {name:"Moño Stitch",meta:"Medida 10 cm",price:65,emoji:"🎀"},
+ {name:"Moño Princesa",meta:"Medida 9 cm",price:60,emoji:"🎀"},
+ {name:"Moño Hello Kitty",meta:"Medida 9 cm",price:60,emoji:"🎀"},
+ {name:"Moño Girasol",meta:"Medida 10 cm",price:65,emoji:"🎀"}
 ];
-let cart=0;
-const grid=document.getElementById("productGrid");
-function render(filter="Todos"){
- grid.innerHTML="";
- products.filter(p=>filter==="Todos"||p.cat===filter).forEach(p=>{
-  const el=document.createElement("article");
-  el.className="card";
-  el.innerHTML=`<div class="pic">${p.emoji}</div><div class="card-body"><h3>${p.name}</h3><p class="price">$${p.price} MXN</p><button>Agregar al carrito</button></div>`;
-  el.querySelector("button").onclick=()=>{cart++;document.getElementById("cartCount").textContent=cart};
-  grid.appendChild(el);
- });
+let cart=0, current=0, timer;
+const grid=document.getElementById("productGrid"), toast=document.getElementById("toast");
+function showToast(msg){toast.textContent=msg;toast.classList.add("show");clearTimeout(showToast.t);showToast.t=setTimeout(()=>toast.classList.remove("show"),1800)}
+function updateCart(){document.getElementById("cartCountTop").textContent=cart;document.getElementById("cartCountBottom").textContent=cart}
+function render(list=products){
+ grid.innerHTML=list.map((p,i)=>`<article class="product"><div class="product-img">${p.emoji}</div><div class="product-info"><h3>${p.name}</h3><p>${p.meta}</p><p class="price">$${p.price} MXN</p><button class="buy" data-i="${i}" aria-label="Agregar ${p.name}">🛒</button></div></article>`).join("");
+ grid.querySelectorAll(".buy").forEach(btn=>btn.onclick=()=>{cart++;updateCart();showToast("Producto agregado al carrito ♥")});
 }
-document.querySelectorAll("[data-filter]").forEach(btn=>btn.addEventListener("click",()=>{
- const f=btn.dataset.filter; render(f);
- document.querySelectorAll(".filter").forEach(x=>x.classList.toggle("active",x.dataset.filter===f));
- document.getElementById("productos").scrollIntoView({behavior:"smooth"});
-}));
-document.getElementById("startCustom").onclick=()=>alert("El configurador de moños se integrará en la siguiente etapa.");
-render();
+function setupCarousel(){
+ const slides=[...document.querySelectorAll(".slide")], dots=document.getElementById("dots");
+ dots.innerHTML=slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" aria-label="Imagen ${i+1}"></button>`).join("");
+ const set=i=>{current=(i+slides.length)%slides.length;slides.forEach((s,n)=>s.classList.toggle("active",n===current));dots.querySelectorAll(".dot").forEach((d,n)=>d.classList.toggle("active",n===current))};
+ dots.querySelectorAll(".dot").forEach((d,i)=>d.onclick=()=>{set(i);restart()});
+ document.getElementById("prev").onclick=()=>{set(current-1);restart()};
+ document.getElementById("next").onclick=()=>{set(current+1);restart()};
+ const restart=()=>{clearInterval(timer);timer=setInterval(()=>set(current+1),5000)};
+ restart();
+}
+document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim().toLowerCase();render(q?products.filter(p=>p.name.toLowerCase().includes(q)||p.meta.toLowerCase().includes(q)):products)};
+document.getElementById("customBtn").onclick=()=>showToast("Aquí construiremos el configurador real de tu moño.");
+document.getElementById("cartTop").onclick=()=>showToast(`Tu carrito tiene ${cart} producto${cart===1?"":"s"}.`);
+document.getElementById("cartBottom").onclick=()=>showToast(`Tu carrito tiene ${cart} producto${cart===1?"":"s"}.`);
+document.getElementById("menuMobile").onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
+render();setupCarousel();
