@@ -10,6 +10,19 @@ import {
   updateProfile
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
 
 /* =========================
    FIREBASE
@@ -27,6 +40,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 
 /* =========================
@@ -65,10 +79,6 @@ const products = [
 ];
 
 
-/* =========================
-   VARIABLES
-========================= */
-
 let cart = [];
 let current = 0;
 let timer;
@@ -87,11 +97,36 @@ function updateCart() {
     0
   );
 
-  const counter = $("#cartCount");
-
-  if (counter) {
-    counter.textContent = count;
+  if ($("#cartCount")) {
+    $("#cartCount").textContent = count;
   }
+
+  localStorage.setItem(
+    "creacionesYazminCart",
+    JSON.stringify(cart)
+  );
+}
+
+
+function loadCart() {
+
+  try {
+
+    const saved = JSON.parse(
+      localStorage.getItem("creacionesYazminCart") || "[]"
+    );
+
+    if (Array.isArray(saved)) {
+      cart = saved;
+    }
+
+  } catch {
+
+    cart = [];
+
+  }
+
+  updateCart();
 }
 
 
@@ -152,6 +187,7 @@ function showCart() {
         display:flex;
         justify-content:space-between;
       ">
+
         <span>
           <strong>${item.name}</strong><br>
           ${item.qty} × $${item.price}
@@ -160,14 +196,17 @@ function showCart() {
         <strong>
           $${subtotal} MXN
         </strong>
+
       </div>
     `;
 
   }).join("");
 
+
   $("#modalTitle").textContent = "Tu carrito";
 
   $("#modalText").innerHTML = `
+
     ${items}
 
     <div style="
@@ -178,12 +217,280 @@ function showCart() {
     ">
       Total: $${total} MXN
     </div>
+
+    <button
+      id="placeOrder"
+      style="
+        width:100%;
+        padding:14px;
+        margin-top:15px;
+        border:0;
+        border-radius:14px;
+        background:#e98bb8;
+        color:white;
+        font-size:17px;
+        font-weight:bold;
+      "
+    >
+      Realizar pedido
+    </button>
   `;
 
   $("#modalOk").style.display = "block";
   $("#modalOk").textContent = "Cerrar";
 
   $("#modal").classList.add("show");
+
+  $("#placeOrder").onclick = createOrder;
+}
+
+
+/* =========================
+   PERFIL FIRESTORE
+========================= */
+
+async function saveProfile(data) {
+
+  const user = auth.currentUser;
+
+  if (!user) return;
+
+  await setDoc(
+    doc(db, "clientes", user.uid),
+    {
+      nombre: data.nombre || "",
+      email: user.email || "",
+      telefono: data.telefono || "",
+      direccion: data.direccion || "",
+      actualizado: serverTimestamp()
+    },
+    { merge: true }
+  );
+}
+
+
+async function getProfile() {
+
+  const user = auth.currentUser;
+
+  if (!user) return null;
+
+  const result = await getDoc(
+    doc(db, "clientes", user.uid)
+  );
+
+  if (result.exists()) {
+    return result.data();
+  }
+
+  return {
+    nombre: user.displayName || "",
+    email: user.email || "",
+    telefono: "",
+    direccion: ""
+  };
+}
+
+
+/* =========================
+   PEDIDO
+========================= */
+
+async function createOrder() {
+
+  const user = auth.currentUser;
+
+  if (!user) {
+
+    showMessage(
+      "Inicia sesión",
+      "Primero debes iniciar sesión para realizar un pedido."
+    );
+
+    return;
+  }
+
+  if (cart.length === 0) {
+
+    showMessage(
+      "Carrito vacío",
+      "Agrega productos antes de realizar el pedido."
+    );
+
+    return;
+  }
+
+  try {
+
+    const total = cart.reduce(
+      (sum, item) =>
+        sum + (item.price * item.qty),
+      0
+    );
+
+
+    await addDoc(
+      collection(db, "pedidos"),
+      {
+        clienteId: user.uid,
+        clienteEmail: user.email || "",
+        clienteNombre: user.displayName || "",
+        productos: cart,
+        total: total,
+        estado: "Pendiente",
+        fecha: serverTimestamp()
+      }
+    );
+
+
+    cart = [];
+
+    updateCart();
+
+
+    showMessage(
+      "¡Pedido recibido!",
+      "Tu pedido fue guardado correctamente."
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showMessage(
+      "Error",
+      "No se pudo guardar el pedido."
+    );
+  }
+}
+
+
+/* =========================
+   MIS PEDIDOS
+========================= */
+
+async function showOrders() {
+
+  const user = auth.currentUser;
+
+  if (!user) {
+
+    showMessage(
+      "Mis pedidos",
+      "Primero debes iniciar sesión."
+    );
+
+    return;
+  }
+
+
+  $("#modalTitle").textContent =
+    "Mis pedidos";
+
+  $("#modalText").innerHTML =
+    "<p>Cargando pedidos...</p>";
+
+  $("#modalOk").style.display = "block";
+  $("#modalOk").textContent = "Cerrar";
+
+  $("#modal").classList.add("show");
+
+
+  try {
+
+    const q = query(
+      collection(db, "pedidos"),
+      where("clienteId", "==", user.uid)
+    );
+
+
+    const result = await getDocs(q);
+
+
+    if (result.empty) {
+
+      $("#modalText").innerHTML =
+        "<p>Aún no tienes pedidos.</p>";
+
+      return;
+    }
+
+
+    let html = "";
+
+
+    result.forEach(order => {
+
+      const data = order.data();
+
+
+      let productsHtml = "";
+
+      (data.productos || []).forEach(product => {
+
+        productsHtml += `
+          ${product.qty} × ${product.name}<br>
+        `;
+
+      });
+
+
+      let date = "";
+
+      if (data.fecha && data.fecha.toDate) {
+
+        date =
+          data.fecha
+            .toDate()
+            .toLocaleString("es-MX");
+
+      }
+
+
+      html += `
+
+        <div style="
+          padding:12px 0;
+          border-bottom:1px solid #eee;
+        ">
+
+          <strong>Pedido</strong>
+
+          <br><br>
+
+          ${productsHtml}
+
+          <strong>
+            Total: $${data.total || 0} MXN
+          </strong>
+
+          <br>
+
+          Estado:
+          ${data.estado || "Pendiente"}
+
+          <br>
+
+          <small>
+            ${date}
+          </small>
+
+        </div>
+
+      `;
+    });
+
+
+    $("#modalText").innerHTML = html;
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    $("#modalText").innerHTML =
+      "<p>No se pudieron cargar los pedidos.</p>";
+  }
 }
 
 
@@ -193,48 +500,54 @@ function showCart() {
 
 function render(list = products) {
 
-  $("#products").innerHTML = list.map(product => {
+  $("#products").innerHTML =
+    list.map(product => {
 
-    const index = products.indexOf(product);
+      const index =
+        products.indexOf(product);
 
-    return `
-      <article class="product">
 
-        <img
-          src="${product.img}"
-          alt="${product.name}"
-        >
+      return `
 
-        <div class="info">
+        <article class="product">
 
-          <div class="name">
-            ${product.name}
+          <img
+            src="${product.img}"
+            alt="${product.name}"
+          >
+
+          <div class="info">
+
+            <div class="name">
+              ${product.name}
+            </div>
+
+            <div class="measure">
+              ${product.measure}
+            </div>
+
+            <div class="price">
+              $${product.price} MXN
+            </div>
+
+            <button
+              class="buy"
+              data-buy="${index}"
+            >
+              🛒
+            </button>
+
           </div>
 
-          <div class="measure">
-            ${product.measure}
-          </div>
+        </article>
 
-          <div class="price">
-            $${product.price} MXN
-          </div>
+      `;
 
-          <button
-            class="buy"
-            data-buy="${index}"
-            aria-label="Agregar ${product.name}">
-            🛒
-          </button>
-
-        </div>
-
-      </article>
-    `;
-
-  }).join("");
+    }).join("");
 
 
-  document.querySelectorAll("[data-buy]")
+  document
+    .querySelectorAll("[data-buy]")
     .forEach(button => {
 
       button.onclick = () => {
@@ -267,6 +580,7 @@ function showMessage(title, text) {
   $("#modalText").textContent = text;
 
   $("#modalOk").style.display = "block";
+
   $("#modalOk").textContent = "Aceptar";
 
   $("#modal").classList.add("show");
@@ -282,6 +596,7 @@ function showRegister() {
   $("#modalTitle").textContent =
     "Crear cuenta";
 
+
   $("#modalText").innerHTML = `
 
     <form id="registerForm">
@@ -291,15 +606,6 @@ function showRegister() {
         type="text"
         placeholder="Tu nombre"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
       <input
@@ -307,15 +613,6 @@ function showRegister() {
         type="email"
         placeholder="Correo electrónico"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
       <input
@@ -324,15 +621,6 @@ function showRegister() {
         placeholder="Contraseña"
         minlength="6"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
       <input
@@ -341,44 +629,17 @@ function showRegister() {
         placeholder="Repite la contraseña"
         minlength="6"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
-      <button
-        type="submit"
-        style="
-          width:100%;
-          padding:14px;
-          margin-top:10px;
-          border:0;
-          border-radius:14px;
-          background:#e98bb8;
-          color:white;
-          font-size:17px;
-          font-weight:bold;
-        "
-      >
+      <button type="submit">
         Registrarme
       </button>
 
-      <p
-        id="registerError"
-        style="
-          color:#d44;
-          margin-top:10px;
-        "
-      ></p>
+      <p id="registerError"></p>
 
     </form>
   `;
+
 
   $("#modalOk").style.display = "none";
 
@@ -390,6 +651,7 @@ function showRegister() {
     async event => {
 
       event.preventDefault();
+
 
       const name =
         $("#registerName").value.trim();
@@ -434,6 +696,13 @@ function showRegister() {
         );
 
 
+        await saveProfile({
+          nombre: name,
+          telefono: "",
+          direccion: ""
+        });
+
+
         await sendEmailVerification(
           credential.user
         );
@@ -451,10 +720,13 @@ function showRegister() {
 
         }, 300);
 
-      } catch (err) {
+
+      } catch (errorFirebase) {
 
         error.textContent =
-          firebaseError(err.code);
+          firebaseError(
+            errorFirebase.code
+          );
 
       }
 
@@ -464,13 +736,14 @@ function showRegister() {
 
 
 /* =========================
-   INICIAR SESIÓN
+   LOGIN
 ========================= */
 
 function showLogin() {
 
   $("#modalTitle").textContent =
     "Iniciar sesión";
+
 
   $("#modalText").innerHTML = `
 
@@ -481,15 +754,6 @@ function showLogin() {
         type="email"
         placeholder="Correo electrónico"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
       <input
@@ -497,44 +761,18 @@ function showLogin() {
         type="password"
         placeholder="Contraseña"
         required
-        style="
-          width:100%;
-          box-sizing:border-box;
-          padding:14px;
-          margin:7px 0;
-          border-radius:12px;
-          border:1px solid #ddd;
-          font-size:16px;
-        "
       >
 
-      <button
-        type="submit"
-        style="
-          width:100%;
-          padding:14px;
-          margin-top:10px;
-          border:0;
-          border-radius:14px;
-          background:#e98bb8;
-          color:white;
-          font-size:17px;
-          font-weight:bold;
-        "
-      >
+      <button type="submit">
         Entrar
       </button>
 
-      <p
-        id="loginError"
-        style="
-          color:#d44;
-          margin-top:10px;
-        "
-      ></p>
+      <p id="loginError"></p>
 
     </form>
+
   `;
+
 
   $("#modalOk").style.display = "none";
 
@@ -546,6 +784,7 @@ function showLogin() {
     async event => {
 
       event.preventDefault();
+
 
       const email =
         $("#loginEmail").value.trim();
@@ -578,10 +817,13 @@ function showLogin() {
 
         }, 300);
 
-      } catch (err) {
+
+      } catch (firebaseErrorValue) {
 
         error.textContent =
-          firebaseError(err.code);
+          firebaseError(
+            firebaseErrorValue.code
+          );
 
       }
 
@@ -594,7 +836,7 @@ function showLogin() {
    PERFIL
 ========================= */
 
-function showProfile() {
+async function showProfile() {
 
   const user = auth.currentUser;
 
@@ -606,117 +848,178 @@ function showProfile() {
   }
 
 
-  const name =
-    user.displayName || "Cliente";
-
-  const verified =
-    user.emailVerified;
-
-
   $("#modalTitle").textContent =
     "Mi perfil";
 
-  $("#modalText").innerHTML = `
-
-    <div style="
-      text-align:center;
-      padding:10px;
-    ">
-
-      <div style="
-        width:70px;
-        height:70px;
-        margin:auto;
-        border-radius:50%;
-        background:#f5a4ca;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:35px;
-      ">
-        👤
-      </div>
-
-      <h3>
-        ${name}
-      </h3>
-
-      <p>
-        ${user.email}
-      </p>
-
-      <p>
-        ${
-          verified
-            ? "Correo verificado ✅"
-            : "Correo pendiente de verificar ⚠️"
-        }
-      </p>
-
-      ${
-        !verified
-          ? `
-            <button
-              id="verifyEmail"
-              style="
-                width:100%;
-                padding:13px;
-                border:0;
-                border-radius:14px;
-                background:#e98bb8;
-                color:white;
-                font-weight:bold;
-              "
-            >
-              Enviar correo de verificación
-            </button>
-          `
-          : ""
-      }
-
-    </div>
-  `;
+  $("#modalText").innerHTML =
+    "<p>Cargando perfil...</p>";
 
   $("#modalOk").style.display = "block";
+
   $("#modalOk").textContent = "Cerrar";
 
   $("#modal").classList.add("show");
 
 
-  const verify =
-    $("#verifyEmail");
+  try {
+
+    const profile =
+      await getProfile();
 
 
-  if (verify) {
+    $("#modalText").innerHTML = `
 
-    verify.onclick = async () => {
+      <form id="profileForm">
 
-      try {
+        <input
+          id="profileName"
+          type="text"
+          placeholder="Nombre"
+          value="${profile.nombre || ""}"
+          required
+        >
+
+        <input
+          type="email"
+          value="${user.email || ""}"
+          disabled
+        >
+
+        <input
+          id="profilePhone"
+          type="tel"
+          placeholder="Teléfono"
+          value="${profile.telefono || ""}"
+        >
+
+        <textarea
+          id="profileAddress"
+          placeholder="Dirección de entrega"
+          rows="3"
+        >${profile.direccion || ""}</textarea>
+
+
+        <p>
+          ${
+            user.emailVerified
+              ? "Correo verificado ✅"
+              : "Correo pendiente de verificar ⚠️"
+          }
+        </p>
+
+
+        <button type="submit">
+          Guardar datos
+        </button>
+
+
+        ${
+          !user.emailVerified
+            ? `
+              <button
+                type="button"
+                id="verifyEmail"
+              >
+                Enviar correo de verificación
+              </button>
+            `
+            : ""
+        }
+
+
+        <p id="profileMessage"></p>
+
+      </form>
+
+    `;
+
+
+    $("#profileForm").addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+
+        const nombre =
+          $("#profileName").value.trim();
+
+        const telefono =
+          $("#profilePhone").value.trim();
+
+        const direccion =
+          $("#profileAddress").value.trim();
+
+
+        try {
+
+          await updateProfile(
+            user,
+            {
+              displayName: nombre
+            }
+          );
+
+
+          await saveProfile({
+            nombre,
+            telefono,
+            direccion
+          });
+
+
+          $("#profileMessage").textContent =
+            "Datos guardados correctamente ✅";
+
+
+        } catch (error) {
+
+          console.error(error);
+
+          $("#profileMessage").textContent =
+            "No se pudieron guardar los datos.";
+
+        }
+
+      }
+    );
+
+
+    const verify =
+      $("#verifyEmail");
+
+
+    if (verify) {
+
+      verify.onclick = async () => {
 
         await sendEmailVerification(user);
 
         showMessage(
           "Correo enviado",
-          "Revisa tu correo electrónico y la carpeta de spam."
+          "Revisa tu correo y la carpeta de spam."
         );
 
-      } catch (error) {
+      };
 
-        showMessage(
-          "Aviso",
-          "No se pudo enviar el correo en este momento."
-        );
+    }
 
-      }
 
-    };
+  } catch (error) {
+
+    console.error(error);
+
+    showMessage(
+      "Aviso",
+      "No se pudo cargar el perfil."
+    );
 
   }
 }
 
 
 /* =========================
-   ERRORES FIREBASE
+   ERRORES
 ========================= */
 
 function firebaseError(code) {
@@ -724,7 +1027,7 @@ function firebaseError(code) {
   switch (code) {
 
     case "auth/invalid-email":
-      return "El correo electrónico no es válido.";
+      return "El correo no es válido.";
 
     case "auth/email-already-in-use":
       return "Ese correo ya tiene una cuenta.";
@@ -740,9 +1043,6 @@ function firebaseError(code) {
 
     case "auth/wrong-password":
       return "La contraseña es incorrecta.";
-
-    case "auth/too-many-requests":
-      return "Demasiados intentos. Intenta nuevamente más tarde.";
 
     default:
       return "Ocurrió un error. Intenta nuevamente.";
@@ -764,7 +1064,8 @@ function go(n) {
 
 
   current =
-    (n + slides.length) % slides.length;
+    (n + slides.length) %
+    slides.length;
 
 
   slides.forEach((slide, index) => {
@@ -785,6 +1086,7 @@ function go(n) {
     );
 
   });
+
 }
 
 
@@ -792,11 +1094,11 @@ function startCarousel() {
 
   clearInterval(timer);
 
-  timer = setInterval(() => {
+  timer = setInterval(
+    () => go(current + 1),
+    5000
+  );
 
-    go(current + 1);
-
-  }, 5000);
 }
 
 
@@ -853,21 +1155,18 @@ function searchProducts() {
   }
 
 
-  const results =
-    products.filter(product => {
-
-      return (
+  render(
+    products.filter(product =>
+      (
         product.name +
         product.cat +
         product.measure
       )
         .toLowerCase()
-        .includes(q);
+        .includes(q)
+    )
+  );
 
-    });
-
-
-  render(results);
 }
 
 
@@ -878,20 +1177,6 @@ $("#searchBtn").onclick =
 $("#search").addEventListener(
   "input",
   searchProducts
-);
-
-
-$("#search").addEventListener(
-  "keydown",
-  event => {
-
-    if (event.key === "Enter") {
-
-      searchProducts();
-
-    }
-
-  }
 );
 
 
@@ -943,40 +1228,23 @@ document
         button.dataset.action;
 
 
-      if (action === "login") {
-
+      if (action === "login")
         showLogin();
 
-      }
-
-
-      if (action === "register") {
-
+      if (action === "register")
         showRegister();
 
-      }
-
-
-      if (action === "profile") {
-
+      if (action === "profile")
         showProfile();
 
-      }
-
-
-      if (action === "logout") {
-
+      if (action === "logout")
         signOut(auth);
 
-      }
-
-
-      if (action === "cart") {
-
+      if (action === "cart")
         showCart();
 
-      }
-
+      if (action === "orders")
+        showOrders();
 
       if (action === "contact") {
 
@@ -987,34 +1255,13 @@ document
 
       }
 
-
-      if (action === "orders") {
-
-        if (auth.currentUser) {
-
-          showMessage(
-            "Mis pedidos",
-            `Sesión iniciada con ${auth.currentUser.email}. Aquí aparecerán tus pedidos.`
-          );
-
-        } else {
-
-          showMessage(
-            "Mis pedidos",
-            "Primero debes iniciar sesión."
-          );
-
-        }
-
-      }
-
     };
 
   });
 
 
 /* =========================
-   VER TODOS
+   OTROS BOTONES
 ========================= */
 
 $("#allBtn").onclick = () => {
@@ -1026,10 +1273,6 @@ $("#allBtn").onclick = () => {
 };
 
 
-/* =========================
-   CREA TU MOÑO
-========================= */
-
 $("#createBtn").onclick = () => {
 
   showMessage(
@@ -1039,10 +1282,6 @@ $("#createBtn").onclick = () => {
 
 };
 
-
-/* =========================
-   CERRAR MODAL
-========================= */
 
 $("#close").onclick =
   closeModal;
@@ -1057,9 +1296,7 @@ $("#modal").addEventListener(
   event => {
 
     if (event.target.id === "modal") {
-
       closeModal();
-
     }
 
   }
@@ -1067,7 +1304,7 @@ $("#modal").addEventListener(
 
 
 /* =========================
-   ESTADO DE USUARIO
+   SESIÓN
 ========================= */
 
 onAuthStateChanged(
@@ -1076,18 +1313,17 @@ onAuthStateChanged(
 
     const loginButton =
       document.querySelector(
-        '[data-action="login"]'
+        '[data-action="login"], [data-action="profile"]'
       );
 
     const registerButton =
       document.querySelector(
-        '[data-action="register"]'
+        '[data-action="register"], [data-action="logout"]'
       );
 
 
     if (!loginButton ||
         !registerButton) {
-
       return;
     }
 
@@ -1163,11 +1399,66 @@ onAuthStateChanged(
 
 
 /* =========================
-   INICIAR PÁGINA
+   INICIAR
 ========================= */
 
-updateCart();
+loadCart();
 
 render();
 
 startCarousel();
+
+/* =========================
+   PROTECCIÓN DE IMÁGENES
+========================= */
+
+// Evitar menú contextual sobre imágenes
+document.addEventListener("contextmenu", event => {
+  if (event.target.tagName === "IMG") {
+    event.preventDefault();
+  }
+});
+
+// Evitar arrastrar imágenes
+document.addEventListener("dragstart", event => {
+  if (event.target.tagName === "IMG") {
+    event.preventDefault();
+  }
+});
+
+// Evitar selección de imágenes
+document.addEventListener("selectstart", event => {
+  if (event.target.tagName === "IMG") {
+    event.preventDefault();
+  }
+});
+
+// Evitar guardar imágenes mediante algunas acciones del navegador
+document.querySelectorAll("img").forEach(img => {
+  img.setAttribute("draggable", "false");
+  img.setAttribute("oncontextmenu", "return false");
+});
+
+// Protección adicional con teclado
+document.addEventListener("keydown", event => {
+
+  // Ctrl + S
+  if (event.ctrlKey && event.key.toLowerCase() === "s") {
+    event.preventDefault();
+  }
+
+  // Ctrl + U
+  if (event.ctrlKey && event.key.toLowerCase() === "u") {
+    event.preventDefault();
+  }
+
+  // Ctrl + Shift + I
+  if (
+    event.ctrlKey &&
+    event.shiftKey &&
+    event.key.toLowerCase() === "i"
+  ) {
+    event.preventDefault();
+  }
+
+});
