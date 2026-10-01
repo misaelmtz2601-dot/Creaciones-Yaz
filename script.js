@@ -1,12 +1,13 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
 import {
+  getAuth,
   createUserWithEmailAndPassword,
-signInWithEmailAndPassword,
-signOut,
-onAuthStateChanged,
-sendEmailVerification,
-updateProfile
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  sendEmailVerification,
+  updateProfile
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 
@@ -65,7 +66,7 @@ const products = [
 
 
 /* =========================
-   CARRITO
+   VARIABLES
 ========================= */
 
 let cart = [];
@@ -75,8 +76,16 @@ let timer;
 const $ = selector => document.querySelector(selector);
 
 
+/* =========================
+   CARRITO
+========================= */
+
 function updateCart() {
-  const count = cart.reduce((total, item) => total + item.qty, 0);
+
+  const count = cart.reduce(
+    (total, item) => total + item.qty,
+    0
+  );
 
   const counter = $("#cartCount");
 
@@ -87,25 +96,94 @@ function updateCart() {
 
 
 function addToCart(index) {
+
   const product = products[index];
 
-  const existing = cart.find(item => item.name === product.name);
+  const existing = cart.find(
+    item => item.name === product.name
+  );
 
   if (existing) {
+
     existing.qty++;
+
   } else {
+
     cart.push({
       ...product,
       qty: 1
     });
+
   }
 
   updateCart();
 
-  showModal(
+  showMessage(
     "Agregado al carrito",
     `${product.name} fue agregado correctamente.`
   );
+}
+
+
+function showCart() {
+
+  if (cart.length === 0) {
+
+    showMessage(
+      "Tu carrito",
+      "Tu carrito está vacío."
+    );
+
+    return;
+  }
+
+  let total = 0;
+
+  const items = cart.map(item => {
+
+    const subtotal = item.price * item.qty;
+
+    total += subtotal;
+
+    return `
+      <div style="
+        padding:10px 0;
+        border-bottom:1px solid #eee;
+        display:flex;
+        justify-content:space-between;
+      ">
+        <span>
+          <strong>${item.name}</strong><br>
+          ${item.qty} × $${item.price}
+        </span>
+
+        <strong>
+          $${subtotal} MXN
+        </strong>
+      </div>
+    `;
+
+  }).join("");
+
+  $("#modalTitle").textContent = "Tu carrito";
+
+  $("#modalText").innerHTML = `
+    ${items}
+
+    <div style="
+      text-align:right;
+      margin-top:15px;
+      font-size:20px;
+      font-weight:bold;
+    ">
+      Total: $${total} MXN
+    </div>
+  `;
+
+  $("#modalOk").style.display = "block";
+  $("#modalOk").textContent = "Cerrar";
+
+  $("#modal").classList.add("show");
 }
 
 
@@ -122,15 +200,24 @@ function render(list = products) {
     return `
       <article class="product">
 
-        <img src="${product.img}" alt="${product.name}">
+        <img
+          src="${product.img}"
+          alt="${product.name}"
+        >
 
         <div class="info">
 
-          <div class="name">${product.name}</div>
+          <div class="name">
+            ${product.name}
+          </div>
 
-          <div class="measure">${product.measure}</div>
+          <div class="measure">
+            ${product.measure}
+          </div>
 
-          <div class="price">$${product.price} MXN</div>
+          <div class="price">
+            $${product.price} MXN
+          </div>
 
           <button
             class="buy"
@@ -147,15 +234,18 @@ function render(list = products) {
   }).join("");
 
 
-  document.querySelectorAll("[data-buy]").forEach(button => {
+  document.querySelectorAll("[data-buy]")
+    .forEach(button => {
 
-    button.onclick = () => {
+      button.onclick = () => {
 
-      addToCart(Number(button.dataset.buy));
+        addToCart(
+          Number(button.dataset.buy)
+        );
 
-    };
+      };
 
-  });
+    });
 }
 
 
@@ -163,22 +253,23 @@ function render(list = products) {
    MODAL
 ========================= */
 
-function showModal(title, text) {
+function closeModal() {
+
+  $("#modal").classList.remove("show");
+
+}
+
+
+function showMessage(title, text) {
 
   $("#modalTitle").textContent = title;
 
   $("#modalText").textContent = text;
 
   $("#modalOk").style.display = "block";
+  $("#modalOk").textContent = "Aceptar";
 
   $("#modal").classList.add("show");
-}
-
-
-function closeModal() {
-
-  $("#modal").classList.remove("show");
-
 }
 
 
@@ -188,11 +279,28 @@ function closeModal() {
 
 function showRegister() {
 
-  $("#modalTitle").textContent = "Crear cuenta";
+  $("#modalTitle").textContent =
+    "Crear cuenta";
 
   $("#modalText").innerHTML = `
 
     <form id="registerForm">
+
+      <input
+        id="registerName"
+        type="text"
+        placeholder="Tu nombre"
+        required
+        style="
+          width:100%;
+          box-sizing:border-box;
+          padding:14px;
+          margin:7px 0;
+          border-radius:12px;
+          border:1px solid #ddd;
+          font-size:16px;
+        "
+      >
 
       <input
         id="registerEmail"
@@ -203,7 +311,7 @@ function showRegister() {
           width:100%;
           box-sizing:border-box;
           padding:14px;
-          margin:8px 0;
+          margin:7px 0;
           border-radius:12px;
           border:1px solid #ddd;
           font-size:16px;
@@ -220,7 +328,7 @@ function showRegister() {
           width:100%;
           box-sizing:border-box;
           padding:14px;
-          margin:8px 0;
+          margin:7px 0;
           border-radius:12px;
           border:1px solid #ddd;
           font-size:16px;
@@ -237,7 +345,7 @@ function showRegister() {
           width:100%;
           box-sizing:border-box;
           padding:14px;
-          margin:8px 0;
+          margin:7px 0;
           border-radius:12px;
           border:1px solid #ddd;
           font-size:16px;
@@ -256,16 +364,20 @@ function showRegister() {
           color:white;
           font-size:17px;
           font-weight:bold;
-        ">
+        "
+      >
         Registrarme
       </button>
 
-      <p id="registerError"
-         style="color:#d44;margin-top:10px;">
-      </p>
+      <p
+        id="registerError"
+        style="
+          color:#d44;
+          margin-top:10px;
+        "
+      ></p>
 
     </form>
-
   `;
 
   $("#modalOk").style.display = "none";
@@ -273,50 +385,81 @@ function showRegister() {
   $("#modal").classList.add("show");
 
 
-  $("#registerForm").addEventListener("submit", async event => {
+  $("#registerForm").addEventListener(
+    "submit",
+    async event => {
 
-    event.preventDefault();
+      event.preventDefault();
 
-    const email = $("#registerEmail").value.trim();
+      const name =
+        $("#registerName").value.trim();
 
-    const password = $("#registerPassword").value;
+      const email =
+        $("#registerEmail").value.trim();
 
-    const password2 = $("#registerPassword2").value;
+      const password =
+        $("#registerPassword").value;
 
-    const error = $("#registerError");
+      const password2 =
+        $("#registerPassword2").value;
+
+      const error =
+        $("#registerError");
 
 
-    if (password !== password2) {
+      if (password !== password2) {
 
-      error.textContent = "Las contraseñas no coinciden.";
+        error.textContent =
+          "Las contraseñas no coinciden.";
 
-      return;
+        return;
+      }
+
+
+      try {
+
+        const credential =
+          await createUserWithEmailAndPassword(
+            auth,
+            email,
+            password
+          );
+
+
+        await updateProfile(
+          credential.user,
+          {
+            displayName: name
+          }
+        );
+
+
+        await sendEmailVerification(
+          credential.user
+        );
+
+
+        closeModal();
+
+
+        setTimeout(() => {
+
+          showMessage(
+            "¡Cuenta creada!",
+            "Tu cuenta fue creada correctamente. Revisa tu correo para verificarla."
+          );
+
+        }, 300);
+
+      } catch (err) {
+
+        error.textContent =
+          firebaseError(err.code);
+
+      }
 
     }
-
-
-    try {
-
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      closeModal();
-
-      showModal(
-        "¡Cuenta creada!",
-        "Tu cuenta de Creaciones Yazmin fue creada correctamente."
-      );
-
-    } catch (err) {
-
-      error.textContent = firebaseError(err.code);
-
-    }
-
-  });
+  );
 }
 
 
@@ -326,7 +469,8 @@ function showRegister() {
 
 function showLogin() {
 
-  $("#modalTitle").textContent = "Iniciar sesión";
+  $("#modalTitle").textContent =
+    "Iniciar sesión";
 
   $("#modalText").innerHTML = `
 
@@ -341,7 +485,7 @@ function showLogin() {
           width:100%;
           box-sizing:border-box;
           padding:14px;
-          margin:8px 0;
+          margin:7px 0;
           border-radius:12px;
           border:1px solid #ddd;
           font-size:16px;
@@ -357,7 +501,7 @@ function showLogin() {
           width:100%;
           box-sizing:border-box;
           padding:14px;
-          margin:8px 0;
+          margin:7px 0;
           border-radius:12px;
           border:1px solid #ddd;
           font-size:16px;
@@ -376,16 +520,20 @@ function showLogin() {
           color:white;
           font-size:17px;
           font-weight:bold;
-        ">
+        "
+      >
         Entrar
       </button>
 
-      <p id="loginError"
-         style="color:#d44;margin-top:10px;">
-      </p>
+      <p
+        id="loginError"
+        style="
+          color:#d44;
+          margin-top:10px;
+        "
+      ></p>
 
     </form>
-
   `;
 
   $("#modalOk").style.display = "none";
@@ -393,39 +541,177 @@ function showLogin() {
   $("#modal").classList.add("show");
 
 
-  $("#loginForm").addEventListener("submit", async event => {
+  $("#loginForm").addEventListener(
+    "submit",
+    async event => {
 
-    event.preventDefault();
+      event.preventDefault();
 
-    const email = $("#loginEmail").value.trim();
+      const email =
+        $("#loginEmail").value.trim();
 
-    const password = $("#loginPassword").value;
+      const password =
+        $("#loginPassword").value;
 
-    const error = $("#loginError");
+      const error =
+        $("#loginError");
 
 
-    try {
+      try {
 
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+        await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
 
-      closeModal();
 
-      showModal(
-        "¡Bienvenido!",
-        "Has iniciado sesión correctamente en Creaciones Yazmin."
-      );
+        closeModal();
 
-    } catch (err) {
 
-      error.textContent = firebaseError(err.code);
+        setTimeout(() => {
+
+          showMessage(
+            "¡Bienvenido!",
+            "Has iniciado sesión correctamente."
+          );
+
+        }, 300);
+
+      } catch (err) {
+
+        error.textContent =
+          firebaseError(err.code);
+
+      }
 
     }
+  );
+}
 
-  });
+
+/* =========================
+   PERFIL
+========================= */
+
+function showProfile() {
+
+  const user = auth.currentUser;
+
+  if (!user) {
+
+    showLogin();
+
+    return;
+  }
+
+
+  const name =
+    user.displayName || "Cliente";
+
+  const verified =
+    user.emailVerified;
+
+
+  $("#modalTitle").textContent =
+    "Mi perfil";
+
+  $("#modalText").innerHTML = `
+
+    <div style="
+      text-align:center;
+      padding:10px;
+    ">
+
+      <div style="
+        width:70px;
+        height:70px;
+        margin:auto;
+        border-radius:50%;
+        background:#f5a4ca;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:35px;
+      ">
+        👤
+      </div>
+
+      <h3>
+        ${name}
+      </h3>
+
+      <p>
+        ${user.email}
+      </p>
+
+      <p>
+        ${
+          verified
+            ? "Correo verificado ✅"
+            : "Correo pendiente de verificar ⚠️"
+        }
+      </p>
+
+      ${
+        !verified
+          ? `
+            <button
+              id="verifyEmail"
+              style="
+                width:100%;
+                padding:13px;
+                border:0;
+                border-radius:14px;
+                background:#e98bb8;
+                color:white;
+                font-weight:bold;
+              "
+            >
+              Enviar correo de verificación
+            </button>
+          `
+          : ""
+      }
+
+    </div>
+  `;
+
+  $("#modalOk").style.display = "block";
+  $("#modalOk").textContent = "Cerrar";
+
+  $("#modal").classList.add("show");
+
+
+  const verify =
+    $("#verifyEmail");
+
+
+  if (verify) {
+
+    verify.onclick = async () => {
+
+      try {
+
+        await sendEmailVerification(user);
+
+        showMessage(
+          "Correo enviado",
+          "Revisa tu correo electrónico y la carpeta de spam."
+        );
+
+      } catch (error) {
+
+        showMessage(
+          "Aviso",
+          "No se pudo enviar el correo en este momento."
+        );
+
+      }
+
+    };
+
+  }
 }
 
 
@@ -465,89 +751,21 @@ function firebaseError(code) {
 
 
 /* =========================
-   CARRITO
-========================= */
-
-function showCart() {
-
-  if (cart.length === 0) {
-
-    showModal(
-      "Tu carrito",
-      "Tu carrito está vacío."
-    );
-
-    return;
-  }
-
-
-  let total = 0;
-
-  const html = cart.map(item => {
-
-    const subtotal = item.price * item.qty;
-
-    total += subtotal;
-
-    return `
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin:10px 0;
-        padding:10px;
-        border-bottom:1px solid #eee;
-      ">
-
-        <div>
-          <strong>${item.name}</strong><br>
-          ${item.qty} × $${item.price}
-        </div>
-
-        <strong>$${subtotal} MXN</strong>
-
-      </div>
-    `;
-
-  }).join("");
-
-
-  $("#modalTitle").textContent = "Tu carrito";
-
-  $("#modalText").innerHTML = `
-
-    ${html}
-
-    <div style="
-      text-align:right;
-      margin-top:15px;
-      font-size:20px;
-      font-weight:bold;
-    ">
-      Total: $${total} MXN
-    </div>
-
-  `;
-
-  $("#modalOk").style.display = "block";
-
-  $("#modalOk").textContent = "Cerrar";
-
-  $("#modal").classList.add("show");
-}
-
-
-/* =========================
    CARRUSEL
 ========================= */
 
 function go(n) {
 
-  const slides = document.querySelectorAll(".slide");
+  const slides =
+    document.querySelectorAll(".slide");
 
-  const dots = document.querySelectorAll(".dots button");
+  const dots =
+    document.querySelectorAll(".dots button");
 
-  current = (n + slides.length) % slides.length;
+
+  current =
+    (n + slides.length) % slides.length;
+
 
   slides.forEach((slide, index) => {
 
@@ -557,6 +775,7 @@ function go(n) {
     );
 
   });
+
 
   dots.forEach((dot, index) => {
 
@@ -599,17 +818,19 @@ $("#next").onclick = () => {
 };
 
 
-document.querySelectorAll(".dots button").forEach((dot, index) => {
+document
+  .querySelectorAll(".dots button")
+  .forEach((dot, index) => {
 
-  dot.onclick = () => {
+    dot.onclick = () => {
 
-    go(index);
+      go(index);
 
-    startCarousel();
+      startCarousel();
 
-  };
+    };
 
-});
+  });
 
 
 /* =========================
@@ -618,9 +839,10 @@ document.querySelectorAll(".dots button").forEach((dot, index) => {
 
 function searchProducts() {
 
-  const q = $("#search").value
-    .trim()
-    .toLowerCase();
+  const q =
+    $("#search").value
+      .trim()
+      .toLowerCase();
 
 
   if (!q) {
@@ -628,28 +850,29 @@ function searchProducts() {
     render(products);
 
     return;
-
   }
 
 
-  const results = products.filter(product => {
+  const results =
+    products.filter(product => {
 
-    return (
-      product.name +
-      product.cat +
-      product.measure
-    )
-      .toLowerCase()
-      .includes(q);
+      return (
+        product.name +
+        product.cat +
+        product.measure
+      )
+        .toLowerCase()
+        .includes(q);
 
-  });
+    });
 
 
   render(results);
 }
 
 
-$("#searchBtn").onclick = searchProducts;
+$("#searchBtn").onclick =
+  searchProducts;
 
 
 $("#search").addEventListener(
@@ -676,93 +899,118 @@ $("#search").addEventListener(
    CATEGORÍAS
 ========================= */
 
-document.querySelectorAll("[data-category]").forEach(button => {
+document
+  .querySelectorAll("[data-category]")
+  .forEach(button => {
 
-  button.onclick = () => {
+    button.onclick = () => {
 
-    const category = button.dataset.category;
+      const category =
+        button.dataset.category;
 
-    render(
-      products.filter(
-        product => product.cat === category
-      )
-    );
 
-    window.scrollTo({
-      top: document.querySelector(".recent").offsetTop - 10,
-      behavior: "smooth"
-    });
+      render(
+        products.filter(
+          product =>
+            product.cat === category
+        )
+      );
 
-  };
 
-});
+      window.scrollTo({
+        top:
+          document.querySelector(".recent")
+            .offsetTop - 10,
+        behavior: "smooth"
+      });
+
+    };
+
+  });
 
 
 /* =========================
-   BOTONES PRINCIPALES
+   BOTONES
 ========================= */
 
-document.querySelectorAll("[data-action]").forEach(button => {
+document
+  .querySelectorAll("[data-action]")
+  .forEach(button => {
 
-  button.onclick = () => {
+    button.onclick = () => {
 
-    const action = button.dataset.action;
-
-
-    if (action === "login") {
-
-      showLogin();
-
-    }
+      const action =
+        button.dataset.action;
 
 
-    if (action === "register") {
+      if (action === "login") {
 
-      showRegister();
+        showLogin();
 
-    }
-
-
-    if (action === "cart") {
-
-      showCart();
-
-    }
+      }
 
 
-    if (action === "contact") {
+      if (action === "register") {
 
-      showModal(
-        "Contacto",
-        "Aquí conectaremos WhatsApp y los datos de contacto de Creaciones Yazmin."
-      );
+        showRegister();
 
-    }
+      }
 
 
-    if (action === "orders") {
+      if (action === "profile") {
 
-      if (auth.currentUser) {
+        showProfile();
 
-        showModal(
-          "Mis pedidos",
-          `Sesión iniciada con ${auth.currentUser.email}. Aquí aparecerán tus pedidos.`
-        );
+      }
 
-      } else {
 
-        showModal(
-          "Mis pedidos",
-          "Primero debes iniciar sesión para consultar tus pedidos."
+      if (action === "logout") {
+
+        signOut(auth);
+
+      }
+
+
+      if (action === "cart") {
+
+        showCart();
+
+      }
+
+
+      if (action === "contact") {
+
+        showMessage(
+          "Contacto",
+          "Aquí conectaremos WhatsApp y los datos de contacto de Creaciones Yazmin."
         );
 
       }
 
-    }
 
-  };
+      if (action === "orders") {
 
-});
+        if (auth.currentUser) {
+
+          showMessage(
+            "Mis pedidos",
+            `Sesión iniciada con ${auth.currentUser.email}. Aquí aparecerán tus pedidos.`
+          );
+
+        } else {
+
+          showMessage(
+            "Mis pedidos",
+            "Primero debes iniciar sesión."
+          );
+
+        }
+
+      }
+
+    };
+
+  });
 
 
 /* =========================
@@ -784,7 +1032,7 @@ $("#allBtn").onclick = () => {
 
 $("#createBtn").onclick = () => {
 
-  showModal(
+  showMessage(
     "Crea tu moño",
     "Aquí irá el personalizador para elegir nombre, colores, estilo y detalles de tu moño."
   );
@@ -796,49 +1044,126 @@ $("#createBtn").onclick = () => {
    CERRAR MODAL
 ========================= */
 
-$("#close").onclick = closeModal;
+$("#close").onclick =
+  closeModal;
 
 
-$("#modalOk").onclick = closeModal;
+$("#modalOk").onclick =
+  closeModal;
 
 
-$("#modal").addEventListener("click", event => {
+$("#modal").addEventListener(
+  "click",
+  event => {
 
-  if (event.target.id === "modal") {
+    if (event.target.id === "modal") {
 
-    closeModal();
+      closeModal();
+
+    }
 
   }
-
-});
+);
 
 
 /* =========================
-   ESTADO DE SESIÓN
+   ESTADO DE USUARIO
 ========================= */
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(
+  auth,
+  user => {
 
-  if (user) {
+    const loginButton =
+      document.querySelector(
+        '[data-action="login"]'
+      );
 
-    console.log(
-      "Usuario conectado:",
-      user.email
-    );
+    const registerButton =
+      document.querySelector(
+        '[data-action="register"]'
+      );
 
-  } else {
 
-    console.log(
-      "No hay usuario conectado"
-    );
+    if (!loginButton ||
+        !registerButton) {
+
+      return;
+    }
+
+
+    if (user) {
+
+      loginButton.innerHTML = `
+        <span class="ico">👤</span>
+        <span>Mi<br>perfil</span>
+      `;
+
+      loginButton.dataset.action =
+        "profile";
+
+
+      registerButton.innerHTML = `
+        <span class="ico">🚪</span>
+        <span>Cerrar<br>sesión</span>
+      `;
+
+      registerButton.dataset.action =
+        "logout";
+
+
+      loginButton.onclick =
+        showProfile;
+
+
+      registerButton.onclick =
+        async () => {
+
+          await signOut(auth);
+
+          showMessage(
+            "Sesión cerrada",
+            "Has cerrado sesión correctamente."
+          );
+
+        };
+
+
+    } else {
+
+      loginButton.innerHTML = `
+        <span class="ico">♟</span>
+        <span>Iniciar<br>sesión</span>
+      `;
+
+      loginButton.dataset.action =
+        "login";
+
+
+      registerButton.innerHTML = `
+        <span class="ico">♟+</span>
+        <span>Registrarse</span>
+      `;
+
+      registerButton.dataset.action =
+        "register";
+
+
+      loginButton.onclick =
+        showLogin;
+
+
+      registerButton.onclick =
+        showRegister;
+
+    }
 
   }
-
-});
+);
 
 
 /* =========================
-   INICIAR
+   INICIAR PÁGINA
 ========================= */
 
 updateCart();
